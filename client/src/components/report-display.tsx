@@ -193,6 +193,7 @@ export default function ReportDisplay({ report, isGenerating }: ReportDisplayPro
                   <tr>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Parameter</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Result</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reference Range</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                   </tr>
                 </thead>
@@ -205,6 +206,7 @@ export default function ReportDisplay({ report, isGenerating }: ReportDisplayPro
                       <tr key={param}>
                         <td className="px-4 py-3 text-sm font-medium text-gray-900">{param}</td>
                         <td className="px-4 py-3 text-sm text-gray-700">{value}</td>
+                        <td className="px-4 py-3 text-sm text-gray-600">{finding?.referenceRange || 'N/A'}</td>
                         <td className="px-4 py-3 text-sm">
                           <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(finding?.status || 'normal')}`}>
                             {finding?.status || 'Normal'}

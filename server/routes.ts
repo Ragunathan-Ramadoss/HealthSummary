@@ -91,11 +91,54 @@ async function generateAIReport(testData: any) {
 function createPromptFromTestData(testData: any): string {
   const { testType, parameters } = testData;
   
+  // Import test configs to get reference ranges
+  const testConfigs = {
+    blood: [
+      { name: 'Hemoglobin', unit: 'g/dL', normalRange: '12.0-16.0' },
+      { name: 'White Blood Cells', unit: '×10³/μL', normalRange: '4.0-11.0' },
+      { name: 'Platelets', unit: '×10³/μL', normalRange: '150-450' },
+      { name: 'Glucose', unit: 'mg/dL', normalRange: '70-100' },
+      { name: 'Hematocrit', unit: '%', normalRange: '36-46' }
+    ],
+    urine: [
+      { name: 'Protein', unit: 'mg/dL', normalRange: '0-8' },
+      { name: 'Glucose', unit: 'mg/dL', normalRange: '0' },
+      { name: 'Specific Gravity', unit: '', normalRange: '1.003-1.030' },
+      { name: 'pH', unit: '', normalRange: '4.6-8.0' },
+      { name: 'Ketones', unit: 'mg/dL', normalRange: 'Negative' }
+    ],
+    lipid: [
+      { name: 'Total Cholesterol', unit: 'mg/dL', normalRange: '<200' },
+      { name: 'HDL Cholesterol', unit: 'mg/dL', normalRange: '>40 (M), >50 (F)' },
+      { name: 'LDL Cholesterol', unit: 'mg/dL', normalRange: '<100' },
+      { name: 'Triglycerides', unit: 'mg/dL', normalRange: '<150' },
+      { name: 'Non-HDL Cholesterol', unit: 'mg/dL', normalRange: '<130' }
+    ],
+    thyroid: [
+      { name: 'TSH', unit: 'mIU/L', normalRange: '0.4-4.0' },
+      { name: 'Free T4', unit: 'ng/dL', normalRange: '0.8-1.8' },
+      { name: 'Free T3', unit: 'pg/mL', normalRange: '2.3-4.2' },
+      { name: 'T4 Total', unit: 'μg/dL', normalRange: '4.5-12.0' }
+    ],
+    liver: [
+      { name: 'ALT', unit: 'U/L', normalRange: '7-56' },
+      { name: 'AST', unit: 'U/L', normalRange: '10-40' },
+      { name: 'Bilirubin Total', unit: 'mg/dL', normalRange: '0.2-1.2' },
+      { name: 'Alkaline Phosphatase', unit: 'U/L', normalRange: '44-147' },
+      { name: 'Albumin', unit: 'g/dL', normalRange: '3.5-5.0' }
+    ]
+  };
+
+  const currentTestConfig = testConfigs[testType as keyof typeof testConfigs] || [];
+  
   let prompt = `As a medical AI assistant, analyze the following ${testType} test results and provide a comprehensive medical report in JSON format.
 
 Patient Test Data:
 Test Type: ${testType}
 Parameters: ${JSON.stringify(parameters, null, 2)}
+
+Reference Ranges for ${testType} tests:
+${currentTestConfig.map(config => `- ${config.name}: ${config.normalRange} ${config.unit}`).join('\n')}
 
 Please provide a detailed analysis in the following JSON structure:
 {
@@ -104,6 +147,7 @@ Please provide a detailed analysis in the following JSON structure:
     {
       "parameter": "parameter name",
       "value": "test value with unit",
+      "referenceRange": "normal reference range with units",
       "status": "normal/abnormal/borderline",
       "interpretation": "clinical interpretation"
     }
@@ -137,12 +181,62 @@ function parseAIResponse(aiResponse: string, testData: any) {
       return JSON.parse(jsonMatch[0]);
     }
     
+    // Get reference ranges for fallback
+    const testConfigs = {
+      blood: [
+        { name: 'Hemoglobin', unit: 'g/dL', normalRange: '12.0-16.0' },
+        { name: 'White Blood Cells', unit: '×10³/μL', normalRange: '4.0-11.0' },
+        { name: 'Platelets', unit: '×10³/μL', normalRange: '150-450' },
+        { name: 'Glucose', unit: 'mg/dL', normalRange: '70-100' },
+        { name: 'Hematocrit', unit: '%', normalRange: '36-46' }
+      ],
+      urine: [
+        { name: 'Protein', unit: 'mg/dL', normalRange: '0-8' },
+        { name: 'Glucose', unit: 'mg/dL', normalRange: '0' },
+        { name: 'Specific Gravity', unit: '', normalRange: '1.003-1.030' },
+        { name: 'pH', unit: '', normalRange: '4.6-8.0' },
+        { name: 'Ketones', unit: 'mg/dL', normalRange: 'Negative' }
+      ],
+      lipid: [
+        { name: 'Total Cholesterol', unit: 'mg/dL', normalRange: '<200' },
+        { name: 'HDL Cholesterol', unit: 'mg/dL', normalRange: '>40 (M), >50 (F)' },
+        { name: 'LDL Cholesterol', unit: 'mg/dL', normalRange: '<100' },
+        { name: 'Triglycerides', unit: 'mg/dL', normalRange: '<150' },
+        { name: 'Non-HDL Cholesterol', unit: 'mg/dL', normalRange: '<130' }
+      ],
+      thyroid: [
+        { name: 'TSH', unit: 'mIU/L', normalRange: '0.4-4.0' },
+        { name: 'Free T4', unit: 'ng/dL', normalRange: '0.8-1.8' },
+        { name: 'Free T3', unit: 'pg/mL', normalRange: '2.3-4.2' },
+        { name: 'T4 Total', unit: 'μg/dL', normalRange: '4.5-12.0' }
+      ],
+      liver: [
+        { name: 'ALT', unit: 'U/L', normalRange: '7-56' },
+        { name: 'AST', unit: 'U/L', normalRange: '10-40' },
+        { name: 'Bilirubin Total', unit: 'mg/dL', normalRange: '0.2-1.2' },
+        { name: 'Alkaline Phosphatase', unit: 'U/L', normalRange: '44-147' },
+        { name: 'Albumin', unit: 'g/dL', normalRange: '3.5-5.0' }
+      ]
+    };
+
+    const currentTestConfig = testConfigs[testData.testType as keyof typeof testConfigs] || [];
+    
+    // Helper function to get reference range for a parameter
+    const getReferenceRange = (paramName: string) => {
+      const config = currentTestConfig.find(c => 
+        c.name.toLowerCase().includes(paramName.toLowerCase()) ||
+        paramName.toLowerCase().includes(c.name.toLowerCase())
+      );
+      return config ? `${config.normalRange} ${config.unit}`.trim() : "Reference range not available";
+    };
+    
     // Fallback: create structured response from text
     return {
       summary: aiResponse.split('\n')[0] || "AI analysis completed",
       keyFindings: Object.entries(testData.parameters).map(([key, value]) => ({
         parameter: key,
         value: `${value}`,
+        referenceRange: getReferenceRange(key),
         status: "normal",
         interpretation: "Within expected range"
       })),

@@ -103,17 +103,49 @@ export default function ReportDisplay({ report, isGenerating }: ReportDisplayPro
     return testNames[testType as keyof typeof testNames] || testType;
   };
 
-  const getRiskLevel = (findings: any[]) => {
-    if (!findings || findings.length === 0) return 'low';
-    const abnormalCount = findings.filter(f => f.status === 'abnormal').length;
-    const borderlineCount = findings.filter(f => f.status === 'borderline').length;
+  const getRiskLevel = (findings: any[], parameters: any) => {
+    if (!findings || findings.length === 0) {
+      // Fallback: analyze parameters directly
+      if (!parameters) return 'low';
+      
+      let abnormalCount = 0;
+      let borderlineCount = 0;
+      
+      // Simple parameter analysis based on common ranges
+      Object.entries(parameters).forEach(([key, value]) => {
+        const numValue = parseFloat(String(value));
+        if (isNaN(numValue)) return;
+        
+        // Basic risk assessment for common parameters
+        if (key.toLowerCase().includes('cholesterol')) {
+          if (numValue > 240) abnormalCount++;
+          else if (numValue > 200) borderlineCount++;
+        } else if (key.toLowerCase().includes('glucose')) {
+          if (numValue > 126) abnormalCount++;
+          else if (numValue > 100) borderlineCount++;
+        } else if (key.toLowerCase().includes('hemoglobin')) {
+          if (numValue < 10 || numValue > 18) abnormalCount++;
+          else if (numValue < 12 || numValue > 16) borderlineCount++;
+        } else if (key.toLowerCase().includes('white blood')) {
+          if (numValue < 3 || numValue > 15) abnormalCount++;
+          else if (numValue < 4 || numValue > 11) borderlineCount++;
+        }
+      });
+      
+      if (abnormalCount > 0) return 'high';
+      if (borderlineCount > 1) return 'medium';
+      return 'low';
+    }
+    
+    const abnormalCount = findings.filter(f => f.status?.toLowerCase() === 'abnormal').length;
+    const borderlineCount = findings.filter(f => f.status?.toLowerCase() === 'borderline').length;
     
     if (abnormalCount > 0) return 'high';
     if (borderlineCount > 1) return 'medium';
     return 'low';
   };
 
-  const riskLevel = getRiskLevel(report?.aiReport?.keyFindings || []);
+  const riskLevel = getRiskLevel(report?.aiReport?.keyFindings || [], report?.parameters);
 
   return (
     <div className="space-y-6">

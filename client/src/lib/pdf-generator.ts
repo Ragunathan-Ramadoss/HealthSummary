@@ -1,4 +1,5 @@
 import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 interface PDFReportData {
   patientId: string;
@@ -33,6 +34,14 @@ export const generatePDFReport = (reportData: PDFReportData) => {
   const margin = 20;
   let yPosition = margin;
   
+  // Medical theme colors
+  const medicalBlue = [41, 128, 185] as const;
+  const medicalGreen = [39, 174, 96] as const;
+  const medicalAmber = [243, 156, 18] as const;
+  const medicalRed = [231, 76, 60] as const;
+  const lightGray = [248, 249, 250] as const;
+  const darkGray = [52, 58, 64] as const;
+  
   // Helper function to add text with word wrapping
   const addWrappedText = (text: string, x: number, y: number, maxWidth: number, fontSize: number = 10) => {
     doc.setFontSize(fontSize);
@@ -61,96 +70,255 @@ export const generatePDFReport = (reportData: PDFReportData) => {
     return testNames[testType as keyof typeof testNames] || testType;
   };
 
-  // Header
-  doc.setFillColor(41, 128, 185);
-  doc.rect(0, 0, pageWidth, 40, 'F');
+  // Calculate risk level
+  const getRiskLevel = (findings: any[], parameters: any) => {
+    if (!findings || findings.length === 0) {
+      if (!parameters) return 'low';
+      
+      let abnormalCount = 0;
+      let borderlineCount = 0;
+      
+      Object.entries(parameters).forEach(([key, value]) => {
+        const numValue = parseFloat(String(value));
+        if (isNaN(numValue)) return;
+        
+        if (key.toLowerCase().includes('cholesterol')) {
+          if (numValue > 240) abnormalCount++;
+          else if (numValue > 200) borderlineCount++;
+        } else if (key.toLowerCase().includes('glucose')) {
+          if (numValue > 126) abnormalCount++;
+          else if (numValue > 100) borderlineCount++;
+        } else if (key.toLowerCase().includes('hemoglobin')) {
+          if (numValue < 10 || numValue > 18) abnormalCount++;
+          else if (numValue < 12 || numValue > 16) borderlineCount++;
+        }
+      });
+      
+      if (abnormalCount > 0) return 'high';
+      if (borderlineCount > 1) return 'medium';
+      return 'low';
+    }
+    
+    const abnormalCount = findings.filter(f => f.status?.toLowerCase() === 'abnormal').length;
+    const borderlineCount = findings.filter(f => f.status?.toLowerCase() === 'borderline').length;
+    
+    if (abnormalCount > 0) return 'high';
+    if (borderlineCount > 1) return 'medium';
+    return 'low';
+  };
+
+  const riskLevel = getRiskLevel(reportData.aiReport?.keyFindings || [], reportData.parameters);
+
+  // Enhanced Header with gradient effect
+  doc.setFillColor(medicalBlue[0], medicalBlue[1], medicalBlue[2]);
+  doc.rect(0, 0, pageWidth, 45, 'F');
+  
+  // Add subtle gradient effect
+  doc.setFillColor(41, 128, 200);
+  doc.rect(0, 0, pageWidth, 25, 'F');
   
   doc.setTextColor(255, 255, 255);
-  doc.setFontSize(20);
+  doc.setFontSize(24);
   doc.setFont('helvetica', 'bold');
-  doc.text('MediReport AI', margin, 25);
+  doc.text('MediReport AI', margin, 20);
   
-  doc.setFontSize(12);
+  doc.setFontSize(14);
   doc.setFont('helvetica', 'normal');
   doc.text('Medical Test Analysis Report', margin, 35);
 
-  yPosition = 60;
+  yPosition = 65;
 
-  // Report Title
-  doc.setTextColor(0, 0, 0);
-  doc.setFontSize(16);
+  // Report Title with colored background
+  doc.setFillColor(240, 248, 255);
+  doc.rect(margin - 5, yPosition - 5, pageWidth - 2 * margin + 10, 25, 'F');
+  doc.setDrawColor(200, 220, 240);
+  doc.rect(margin - 5, yPosition - 5, pageWidth - 2 * margin + 10, 25);
+  
+  doc.setTextColor(medicalBlue[0], medicalBlue[1], medicalBlue[2]);
+  doc.setFontSize(18);
   doc.setFont('helvetica', 'bold');
   const title = `Understanding your ${getTestDisplayName(reportData.testType)} Test Results`;
-  yPosition = addWrappedText(title, margin, yPosition, pageWidth - 2 * margin, 16);
-  yPosition += 10;
-
-  // Patient Information
-  checkNewPage(40);
-  doc.setFontSize(14);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Patient Information', margin, yPosition);
-  yPosition += 10;
-
+  yPosition = addWrappedText(title, margin, yPosition + 5, pageWidth - 2 * margin, 18);
+  
+  doc.setTextColor(100, 100, 100);
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
-  doc.text(`Patient ID: ${reportData.patientId}`, margin, yPosition);
+  doc.text('Comprehensive AI-powered analysis with personalized insights', margin, yPosition + 5);
+  yPosition += 20;
+
+  // Patient Information with styled box
+  checkNewPage(50);
+  doc.setFillColor(lightGray[0], lightGray[1], lightGray[2]);
+  doc.rect(margin - 5, yPosition - 5, pageWidth - 2 * margin + 10, 45, 'F');
+  doc.setDrawColor(200, 200, 200);
+  doc.rect(margin - 5, yPosition - 5, pageWidth - 2 * margin + 10, 45);
+  
+  doc.setTextColor(medicalBlue[0], medicalBlue[1], medicalBlue[2]);
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.text('📋 Medical Report Summary', margin, yPosition + 5);
+  yPosition += 15;
+
+  doc.setTextColor(darkGray[0], darkGray[1], darkGray[2]);
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  
+  // Two column layout
+  const patientColWidth = (pageWidth - 2 * margin) / 2;
+  doc.text(`Patient: ${reportData.patientId}`, margin, yPosition);
+  doc.text(`Test Date: ${new Date(reportData.createdAt).toLocaleDateString()}`, margin + patientColWidth, yPosition);
   yPosition += 8;
   doc.text(`Test Type: ${getTestDisplayName(reportData.testType)}`, margin, yPosition);
-  yPosition += 8;
-  doc.text(`Test Date: ${new Date(reportData.createdAt).toLocaleDateString()}`, margin, yPosition);
-  yPosition += 8;
-  doc.text(`Report Generated: ${new Date().toLocaleDateString()}`, margin, yPosition);
-  yPosition += 20;
+  doc.text(`Generated: ${new Date().toLocaleDateString()}`, margin + patientColWidth, yPosition);
+  yPosition += 25;
+
+  // Risk Assessment Section with visual indicator
+  checkNewPage(80);
+  doc.setTextColor(medicalBlue[0], medicalBlue[1], medicalBlue[2]);
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.text('🔬 The Science Behind the Test', margin, yPosition);
+  yPosition += 15;
+
+  // Risk Assessment Scale
+  doc.setTextColor(darkGray[0], darkGray[1], darkGray[2]);
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Risk Assessment Scale', margin, yPosition);
+  yPosition += 10;
+
+  // Risk visualization
+  const riskBoxWidth = (pageWidth - 2 * margin - 20) / 3;
+  const riskBoxHeight = 25;
+  
+  // Low Risk
+  const lowRiskColor = riskLevel === 'low' ? medicalGreen : ([200, 200, 200] as const);
+  doc.setFillColor(lowRiskColor[0], lowRiskColor[1], lowRiskColor[2]);
+  doc.rect(margin, yPosition, riskBoxWidth, riskBoxHeight, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'bold');
+  doc.text('LOW RISK', margin + 5, yPosition + 8);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Normal range', margin + 5, yPosition + 18);
+  
+  // Medium Risk
+  const mediumRiskColor = riskLevel === 'medium' ? medicalAmber : ([200, 200, 200] as const);
+  doc.setFillColor(mediumRiskColor[0], mediumRiskColor[1], mediumRiskColor[2]);
+  doc.rect(margin + riskBoxWidth + 10, yPosition, riskBoxWidth, riskBoxHeight, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.text('MEDIUM RISK', margin + riskBoxWidth + 15, yPosition + 8);
+  doc.text('Monitoring needed', margin + riskBoxWidth + 15, yPosition + 18);
+  
+  // High Risk
+  const highRiskColor = riskLevel === 'high' ? medicalRed : ([200, 200, 200] as const);
+  doc.setFillColor(highRiskColor[0], highRiskColor[1], highRiskColor[2]);
+  doc.rect(margin + 2 * riskBoxWidth + 20, yPosition, riskBoxWidth, riskBoxHeight, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.text('HIGH RISK', margin + 2 * riskBoxWidth + 25, yPosition + 8);
+  doc.text('Action required', margin + 2 * riskBoxWidth + 25, yPosition + 18);
+  
+  yPosition += 35;
+
+  // Current Risk Level highlight
+  doc.setFillColor(240, 248, 255);
+  doc.rect(margin - 5, yPosition - 5, pageWidth - 2 * margin + 10, 20, 'F');
+  doc.setDrawColor(medicalBlue[0], medicalBlue[1], medicalBlue[2]);
+  doc.rect(margin - 5, yPosition - 5, pageWidth - 2 * margin + 10, 20);
+  
+  doc.setTextColor(medicalBlue[0], medicalBlue[1], medicalBlue[2]);
+  doc.setFontSize(11);
+  doc.setFont('helvetica', 'bold');
+  const riskText = `Your Current Risk Level: ${riskLevel.toUpperCase()} RISK`;
+  doc.text(riskText, margin, yPosition + 8);
+  yPosition += 25;
 
   // Executive Summary
   if (reportData.aiReport?.summary) {
     checkNewPage(50);
+    doc.setTextColor(medicalBlue[0], medicalBlue[1], medicalBlue[2]);
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
-    doc.text('Executive Summary', margin, yPosition);
-    yPosition += 10;
+    doc.text('📊 Your Values with Test Summary', margin, yPosition);
+    yPosition += 15;
 
+    doc.setFillColor(250, 250, 250);
+    doc.rect(margin - 5, yPosition - 5, pageWidth - 2 * margin + 10, 30, 'F');
+    doc.setDrawColor(220, 220, 220);
+    doc.rect(margin - 5, yPosition - 5, pageWidth - 2 * margin + 10, 30);
+    
+    doc.setTextColor(darkGray[0], darkGray[1], darkGray[2]);
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Overall Summary', margin, yPosition + 5);
+    yPosition += 12;
+    
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
     yPosition = addWrappedText(reportData.aiReport.summary, margin, yPosition, pageWidth - 2 * margin);
-    yPosition += 15;
+    yPosition += 20;
   }
 
-  // Test Parameters and Results
+  // Test Parameters and Results with enhanced styling
   checkNewPage(60);
-  doc.setFontSize(14);
+  
+  // Enhanced table with colored header
+  doc.setFillColor(240, 248, 255);
+  doc.rect(margin - 5, yPosition - 5, pageWidth - 2 * margin + 10, 30, 'F');
+  doc.setDrawColor(medicalBlue[0], medicalBlue[1], medicalBlue[2]);
+  doc.rect(margin - 5, yPosition - 5, pageWidth - 2 * margin + 10, 30);
+
+  // Table headers with improved styling
+  doc.setTextColor(medicalBlue[0], medicalBlue[1], medicalBlue[2]);
+  doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
-  doc.text('Test Parameters & Results', margin, yPosition);
-  yPosition += 15;
+  const tableColWidth = (pageWidth - 2 * margin) / 4;
+  doc.text('Parameter', margin, yPosition + 5);
+  doc.text('Your Result', margin + tableColWidth, yPosition + 5);
+  doc.text('Reference Range', margin + 2 * tableColWidth, yPosition + 5);
+  doc.text('Status', margin + 3 * tableColWidth, yPosition + 5);
+  yPosition += 35;
 
-  // Table headers
-  doc.setFontSize(9);
-  doc.setFont('helvetica', 'bold');
-  const colWidth = (pageWidth - 2 * margin) / 4;
-  doc.text('Parameter', margin, yPosition);
-  doc.text('Result', margin + colWidth, yPosition);
-  doc.text('Reference Range', margin + 2 * colWidth, yPosition);
-  doc.text('Status', margin + 3 * colWidth, yPosition);
-  yPosition += 5;
-
-  // Draw line under headers
-  doc.line(margin, yPosition, pageWidth - margin, yPosition);
-  yPosition += 8;
-
-  // Table data
+  // Table data with alternating row colors
   doc.setFont('helvetica', 'normal');
+  let rowIndex = 0;
   Object.entries(reportData.parameters).forEach(([param, value]) => {
     checkNewPage(15);
+    
+    // Alternating row colors
+    if (rowIndex % 2 === 0) {
+      doc.setFillColor(250, 250, 250);
+      doc.rect(margin - 5, yPosition - 3, pageWidth - 2 * margin + 10, 12, 'F');
+    }
     
     const finding = reportData.aiReport?.keyFindings?.find((f: any) => 
       f.parameter.toLowerCase().includes(param.toLowerCase())
     );
     
-    doc.text(param, margin, yPosition);
-    doc.text(String(value), margin + colWidth, yPosition);
-    doc.text(finding?.referenceRange || 'N/A', margin + 2 * colWidth, yPosition);
-    doc.text(finding?.status || 'Normal', margin + 3 * colWidth, yPosition);
+    doc.setTextColor(darkGray[0], darkGray[1], darkGray[2]);
+    doc.setFontSize(9);
+    doc.text(param, margin, yPosition + 3);
+    
+    // Highlight result value
+    doc.setFont('helvetica', 'bold');
+    doc.text(String(value), margin + tableColWidth, yPosition + 3);
+    doc.setFont('helvetica', 'normal');
+    
+    doc.text(finding?.referenceRange || 'N/A', margin + 2 * tableColWidth, yPosition + 3);
+    
+    // Status color coding
+    const status = finding?.status || 'Normal';
+    let statusColor = medicalGreen as readonly number[];
+    if (status.toLowerCase() === 'abnormal') statusColor = medicalRed as readonly number[];
+    else if (status.toLowerCase() === 'borderline') statusColor = medicalAmber as readonly number[];
+    
+    doc.setTextColor(statusColor[0], statusColor[1], statusColor[2]);
+    doc.setFont('helvetica', 'bold');
+    doc.text(status, margin + 3 * tableColWidth, yPosition + 3);
+    doc.setFont('helvetica', 'normal');
+    
     yPosition += 12;
+    rowIndex++;
   });
 
   yPosition += 10;
@@ -198,21 +366,29 @@ export const generatePDFReport = (reportData: PDFReportData) => {
     yPosition += 10;
   }
 
-  // Treatment Considerations
+  // Treatment Considerations with enhanced styling
   if (reportData.aiReport?.treatmentOptions) {
     checkNewPage(50);
+    doc.setTextColor(medicalBlue[0], medicalBlue[1], medicalBlue[2]);
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
-    doc.text('Treatment Considerations', margin, yPosition);
+    doc.text('💊 Treatment Considerations', margin, yPosition);
     yPosition += 15;
 
-    // Lifestyle Modifications
+    // Lifestyle Modifications with styled box
     if (reportData.aiReport.treatmentOptions.lifestyle?.length > 0) {
+      doc.setFillColor(240, 255, 240);
+      doc.rect(margin - 5, yPosition - 5, pageWidth - 2 * margin + 10, 15 + (reportData.aiReport.treatmentOptions.lifestyle.length * 8), 'F');
+      doc.setDrawColor(medicalGreen[0], medicalGreen[1], medicalGreen[2]);
+      doc.rect(margin - 5, yPosition - 5, pageWidth - 2 * margin + 10, 15 + (reportData.aiReport.treatmentOptions.lifestyle.length * 8));
+      
+      doc.setTextColor(medicalGreen[0], medicalGreen[1], medicalGreen[2]);
       doc.setFontSize(12);
       doc.setFont('helvetica', 'bold');
-      doc.text('Lifestyle Modifications:', margin, yPosition);
-      yPosition += 10;
+      doc.text('🌱 Lifestyle Modifications:', margin, yPosition + 5);
+      yPosition += 15;
 
+      doc.setTextColor(darkGray[0], darkGray[1], darkGray[2]);
       doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
       reportData.aiReport.treatmentOptions.lifestyle.forEach((item) => {
@@ -220,16 +396,23 @@ export const generatePDFReport = (reportData: PDFReportData) => {
         yPosition = addWrappedText(`• ${item}`, margin, yPosition, pageWidth - 2 * margin);
         yPosition += 3;
       });
-      yPosition += 10;
+      yPosition += 15;
     }
 
-    // Medical Interventions
+    // Medical Interventions with styled box
     if (reportData.aiReport.treatmentOptions.medical?.length > 0) {
+      doc.setFillColor(240, 248, 255);
+      doc.rect(margin - 5, yPosition - 5, pageWidth - 2 * margin + 10, 15 + (reportData.aiReport.treatmentOptions.medical.length * 8), 'F');
+      doc.setDrawColor(medicalBlue[0], medicalBlue[1], medicalBlue[2]);
+      doc.rect(margin - 5, yPosition - 5, pageWidth - 2 * margin + 10, 15 + (reportData.aiReport.treatmentOptions.medical.length * 8));
+      
+      doc.setTextColor(medicalBlue[0], medicalBlue[1], medicalBlue[2]);
       doc.setFontSize(12);
       doc.setFont('helvetica', 'bold');
-      doc.text('Medical Interventions:', margin, yPosition);
-      yPosition += 10;
+      doc.text('🏥 Medical Interventions:', margin, yPosition + 5);
+      yPosition += 15;
 
+      doc.setTextColor(darkGray[0], darkGray[1], darkGray[2]);
       doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
       reportData.aiReport.treatmentOptions.medical.forEach((item) => {
@@ -237,16 +420,23 @@ export const generatePDFReport = (reportData: PDFReportData) => {
         yPosition = addWrappedText(`• ${item}`, margin, yPosition, pageWidth - 2 * margin);
         yPosition += 3;
       });
-      yPosition += 10;
+      yPosition += 15;
     }
 
-    // Medications
+    // Medications with styled box
     if (reportData.aiReport.treatmentOptions.medications?.length > 0) {
+      doc.setFillColor(255, 240, 255);
+      doc.rect(margin - 5, yPosition - 5, pageWidth - 2 * margin + 10, 15 + (reportData.aiReport.treatmentOptions.medications.length * 8) + 10, 'F');
+      doc.setDrawColor(148, 0, 211);
+      doc.rect(margin - 5, yPosition - 5, pageWidth - 2 * margin + 10, 15 + (reportData.aiReport.treatmentOptions.medications.length * 8) + 10);
+      
+      doc.setTextColor(148, 0, 211);
       doc.setFontSize(12);
       doc.setFont('helvetica', 'bold');
-      doc.text('Common Medications:', margin, yPosition);
-      yPosition += 10;
+      doc.text('💊 Common Medications:', margin, yPosition + 5);
+      yPosition += 15;
 
+      doc.setTextColor(darkGray[0], darkGray[1], darkGray[2]);
       doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
       reportData.aiReport.treatmentOptions.medications.forEach((item) => {
@@ -254,7 +444,13 @@ export const generatePDFReport = (reportData: PDFReportData) => {
         yPosition = addWrappedText(`• ${item}`, margin, yPosition, pageWidth - 2 * margin);
         yPosition += 3;
       });
-      yPosition += 10;
+      
+      // Warning note
+      doc.setTextColor(148, 0, 211);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'italic');
+      yPosition = addWrappedText('*Medications should only be prescribed by qualified healthcare providers', margin, yPosition + 5, pageWidth - 2 * margin);
+      yPosition += 15;
     }
   }
 

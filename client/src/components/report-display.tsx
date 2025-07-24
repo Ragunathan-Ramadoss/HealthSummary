@@ -146,46 +146,181 @@ export default function ReportDisplay({ report, isGenerating }: ReportDisplayPro
         <CardHeader>
           <CardTitle className="flex items-center">
             <Activity className="medical-blue mr-2 h-5 w-5" />
-            Science Behind the Test
+            The Science Behind the Test
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="mb-6">
-            <h4 className="font-medium text-gray-900 mb-3">Risk Assessment Scale</h4>
-            <div className="flex items-center justify-between p-4 bg-gradient-to-r from-green-50 via-yellow-50 to-red-50 rounded-lg border">
-              <div className="text-center flex-1">
-                <div className={`w-6 h-6 rounded-full mx-auto mb-2 ${riskLevel === 'low' ? 'bg-[var(--medical-green)] ring-4 ring-green-200' : 'bg-[var(--medical-green)]'}`}>
-                  <TrendingDown className="w-4 h-4 text-white m-1" />
+          <div className="space-y-6">
+            {/* Scientific Explanation */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2">
+                <div className="prose prose-sm max-w-none">
+                  {report?.testType === 'lipid' && (
+                    <div>
+                      <p className="text-gray-700 leading-relaxed mb-4">
+                        Scientists know that heart disease is caused by particles in the blood called low-density lipoproteins, or LDL. 
+                        But without the tools to measure these LDL particles directly, doctors have traditionally estimated their number 
+                        by measuring the cholesterol they contain. This measure is known as LDL cholesterol, or LDL-C.
+                      </p>
+                      <p className="text-gray-700 leading-relaxed">
+                        While useful for some patients, knowing the amount of cholesterol in these particles is not as important as 
+                        knowing the actual number of LDL particles. When high numbers of LDL particles are in the blood, they build 
+                        up in the arteries and cause heart disease. So a higher number of LDL particles (LDL-P) indicates a higher 
+                        risk of heart disease.
+                      </p>
+                    </div>
+                  )}
+                  {report?.testType === 'blood' && (
+                    <div>
+                      <p className="text-gray-700 leading-relaxed mb-4">
+                        Blood tests provide a comprehensive view of your health by measuring different components circulating in your bloodstream. 
+                        These tests can detect infections, anemia, bleeding disorders, and other conditions.
+                      </p>
+                      <p className="text-gray-700 leading-relaxed">
+                        Hemoglobin carries oxygen throughout your body, while white blood cells fight infections. Platelets help your blood clot, 
+                        and glucose levels indicate how your body processes sugar. Each parameter provides crucial information about your overall health.
+                      </p>
+                    </div>
+                  )}
+                  {report?.testType === 'thyroid' && (
+                    <div>
+                      <p className="text-gray-700 leading-relaxed mb-4">
+                        Your thyroid gland produces hormones that control your metabolism, heart rate, and body temperature. 
+                        TSH (Thyroid Stimulating Hormone) is produced by your pituitary gland to regulate thyroid function.
+                      </p>
+                      <p className="text-gray-700 leading-relaxed">
+                        When TSH levels are high, it usually means your thyroid is underactive (hypothyroidism). When TSH is low, 
+                        your thyroid may be overactive (hyperthyroidism). T3 and T4 are the actual thyroid hormones that affect your metabolism.
+                      </p>
+                    </div>
+                  )}
+                  {report?.testType === 'liver' && (
+                    <div>
+                      <p className="text-gray-700 leading-relaxed mb-4">
+                        Your liver performs over 500 functions including filtering toxins, producing proteins, and storing energy. 
+                        Liver function tests measure enzymes and proteins that indicate how well your liver is working.
+                      </p>
+                      <p className="text-gray-700 leading-relaxed">
+                        ALT and AST are enzymes released when liver cells are damaged. Bilirubin is a waste product that can build up 
+                        if your liver isn't processing it properly. Albumin is a protein made by your liver that's essential for many body functions.
+                      </p>
+                    </div>
+                  )}
+                  {report?.testType === 'urine' && (
+                    <div>
+                      <p className="text-gray-700 leading-relaxed mb-4">
+                        Urine analysis provides insights into kidney function, metabolic disorders, and urinary tract health. 
+                        Your kidneys filter waste products and excess water from your blood to create urine.
+                      </p>
+                      <p className="text-gray-700 leading-relaxed">
+                        Protein in urine may indicate kidney damage, while glucose can suggest diabetes. Specific gravity measures 
+                        urine concentration, and pH indicates acidity levels. These parameters help detect various health conditions early.
+                      </p>
+                    </div>
+                  )}
                 </div>
-                <span className="text-xs font-medium text-green-700">Low Risk</span>
-                <p className="text-xs text-gray-600 mt-1">Normal range</p>
               </div>
-              <div className="text-center flex-1">
-                <div className={`w-6 h-6 rounded-full mx-auto mb-2 ${riskLevel === 'medium' ? 'bg-[var(--medical-amber)] ring-4 ring-yellow-200' : 'bg-[var(--medical-amber)]'}`}>
-                  <Activity className="w-4 h-4 text-white m-1" />
+              
+              {/* Visual Risk Diagram */}
+              <div className="lg:col-span-1">
+                <div className="text-center">
+                  <h5 className="font-medium text-gray-900 mb-4">Risk Assessment Visualization</h5>
+                  <div className="relative w-48 h-48 mx-auto mb-4">
+                    {/* Circular risk diagram */}
+                    <div className="absolute inset-0 rounded-full border-8 border-gray-200 bg-gradient-to-br from-green-100 via-yellow-100 to-red-100">
+                      {/* Risk level indicator */}
+                      <div className={`absolute inset-6 rounded-full flex items-center justify-center text-white font-bold text-sm ${
+                        riskLevel === 'low' ? 'bg-[var(--medical-green)]' : 
+                        riskLevel === 'medium' ? 'bg-[var(--medical-amber)]' : 
+                        'bg-[var(--medical-red)]'
+                      }`}>
+                        <div className="text-center">
+                          <div className="text-lg font-bold">
+                            {riskLevel === 'low' ? '✓' : riskLevel === 'medium' ? '!' : '⚠'}
+                          </div>
+                          <div className="text-xs">
+                            {riskLevel.toUpperCase()}<br/>RISK
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Risk level labels */}
+                    <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 text-xs font-medium text-red-700">
+                      Highest Risk
+                    </div>
+                    <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 text-xs font-medium text-green-700">
+                      Low Risk
+                    </div>
+                    <div className="absolute top-1/2 -left-12 transform -translate-y-1/2 text-xs font-medium text-yellow-700 -rotate-90">
+                      Medium Risk
+                    </div>
+                    <div className="absolute top-1/2 -right-12 transform -translate-y-1/2 text-xs font-medium text-yellow-700 rotate-90">
+                      Medium Risk
+                    </div>
+                  </div>
+                  
+                  <div className="text-xs text-gray-600 space-y-1">
+                    <div className="flex items-center justify-center space-x-2">
+                      <div className="w-3 h-3 rounded-full bg-[var(--medical-green)]"></div>
+                      <span>Normal values</span>
+                    </div>
+                    <div className="flex items-center justify-center space-x-2">
+                      <div className="w-3 h-3 rounded-full bg-[var(--medical-amber)]"></div>
+                      <span>Borderline values</span>
+                    </div>
+                    <div className="flex items-center justify-center space-x-2">
+                      <div className="w-3 h-3 rounded-full bg-[var(--medical-red)]"></div>
+                      <span>Abnormal values</span>
+                    </div>
+                  </div>
                 </div>
-                <span className="text-xs font-medium text-yellow-700">Medium Risk</span>
-                <p className="text-xs text-gray-600 mt-1">Monitoring needed</p>
-              </div>
-              <div className="text-center flex-1">
-                <div className={`w-6 h-6 rounded-full mx-auto mb-2 ${riskLevel === 'high' ? 'bg-[var(--medical-red)] ring-4 ring-red-200' : 'bg-[var(--medical-red)]'}`}>
-                  <AlertTriangle className="w-4 h-4 text-white m-1" />
-                </div>
-                <span className="text-xs font-medium text-red-700">High Risk</span>
-                <p className="text-xs text-gray-600 mt-1">Action required</p>
               </div>
             </div>
-            <div className="mt-4 p-3 bg-blue-50 rounded-md">
-              <p className="text-sm text-blue-800">
-                <strong>Your Current Risk Level: </strong>
-                <span className={`font-semibold ${
-                  riskLevel === 'low' ? 'text-green-700' : 
-                  riskLevel === 'medium' ? 'text-yellow-700' : 
-                  'text-red-700'
-                }`}>
-                  {riskLevel.charAt(0).toUpperCase() + riskLevel.slice(1)} Risk
-                </span>
-              </p>
+
+            {/* Risk Assessment Scale */}
+            <div className="border-t pt-6">
+              <h4 className="font-medium text-gray-900 mb-3">Your Risk Assessment</h4>
+              <div className="flex items-center justify-between p-4 bg-gradient-to-r from-green-50 via-yellow-50 to-red-50 rounded-lg border">
+                <div className="text-center flex-1">
+                  <div className={`w-8 h-8 rounded-full mx-auto mb-2 flex items-center justify-center ${riskLevel === 'low' ? 'bg-[var(--medical-green)] ring-4 ring-green-200' : 'bg-[var(--medical-green)]'}`}>
+                    <TrendingDown className="w-5 h-5 text-white" />
+                  </div>
+                  <span className="text-sm font-medium text-green-700">Low Risk</span>
+                  <p className="text-xs text-gray-600 mt-1">All values normal</p>
+                </div>
+                <div className="w-0.5 h-12 bg-gray-300 mx-2"></div>
+                <div className="text-center flex-1">
+                  <div className={`w-8 h-8 rounded-full mx-auto mb-2 flex items-center justify-center ${riskLevel === 'medium' ? 'bg-[var(--medical-amber)] ring-4 ring-yellow-200' : 'bg-[var(--medical-amber)]'}`}>
+                    <Activity className="w-5 h-5 text-white" />
+                  </div>
+                  <span className="text-sm font-medium text-yellow-700">Medium Risk</span>
+                  <p className="text-xs text-gray-600 mt-1">Some borderline values</p>
+                </div>
+                <div className="w-0.5 h-12 bg-gray-300 mx-2"></div>
+                <div className="text-center flex-1">
+                  <div className={`w-8 h-8 rounded-full mx-auto mb-2 flex items-center justify-center ${riskLevel === 'high' ? 'bg-[var(--medical-red)] ring-4 ring-red-200' : 'bg-[var(--medical-red)]'}`}>
+                    <AlertTriangle className="w-5 h-5 text-white" />
+                  </div>
+                  <span className="text-sm font-medium text-red-700">High Risk</span>
+                  <p className="text-xs text-gray-600 mt-1">Abnormal values detected</p>
+                </div>
+              </div>
+              <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <p className="text-sm text-blue-800">
+                  <strong>Your Current Risk Level: </strong>
+                  <span className={`font-semibold ${
+                    riskLevel === 'low' ? 'text-green-700' : 
+                    riskLevel === 'medium' ? 'text-yellow-700' : 
+                    'text-red-700'
+                  }`}>
+                    {riskLevel.charAt(0).toUpperCase() + riskLevel.slice(1)} Risk
+                  </span>
+                </p>
+                <p className="text-xs text-blue-600 mt-2">
+                  Based on {report?.aiReport?.keyFindings?.length || 0} analyzed parameters from your {getTestDisplayName(report?.testType || '')} test.
+                </p>
+              </div>
             </div>
           </div>
         </CardContent>

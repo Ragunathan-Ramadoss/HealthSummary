@@ -1,6 +1,8 @@
 import { FileText, Download, CheckCircle, Search, Lightbulb, Table, Info, AlertTriangle, TrendingDown, Activity, Pill } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { generatePDFReport } from "@/lib/pdf-generator";
+import { useToast } from "@/hooks/use-toast";
 
 interface ReportDisplayProps {
   report: any;
@@ -8,6 +10,34 @@ interface ReportDisplayProps {
 }
 
 export default function ReportDisplay({ report, isGenerating }: ReportDisplayProps) {
+  const { toast } = useToast();
+
+  const handleDownloadPDF = () => {
+    try {
+      const reportData = {
+        patientId: report.patientId,
+        testType: report.testType,
+        createdAt: report.createdAt,
+        parameters: report.parameters,
+        aiReport: report.aiReport
+      };
+      
+      generatePDFReport(reportData);
+      
+      toast({
+        title: "PDF Downloaded",
+        description: "Your medical report has been downloaded successfully.",
+      });
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast({
+        title: "Download Error",
+        description: "There was an error generating your PDF report. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
   if (isGenerating) {
     return (
       <Card className="bg-white shadow-sm border border-gray-200 p-8 text-center">
@@ -114,8 +144,9 @@ export default function ReportDisplay({ report, isGenerating }: ReportDisplayPro
                 <CheckCircle className="w-3 h-3 mr-1" />
                 Generated
               </span>
-              <Button variant="ghost" size="sm">
-                <Download className="w-4 h-4" />
+              <Button variant="ghost" size="sm" onClick={handleDownloadPDF} title="Download PDF Report">
+                <Download className="w-4 h-4 mr-1" />
+                PDF
               </Button>
             </div>
           </div>

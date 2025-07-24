@@ -55,6 +55,12 @@ The application follows a monorepo pattern with clear separation:
 - **Report Generation**: Processes medical test parameters to generate diagnostic insights
 - **Async Processing**: Non-blocking AI report generation workflow
 
+### PDF Report Generation
+- **PDF Library**: jsPDF for client-side PDF generation
+- **Comprehensive Reports**: Includes all sections (patient info, test results, recommendations, treatment options)
+- **Professional Formatting**: Medical-themed layout with proper page breaks and headers
+- **Download Functionality**: One-click PDF download with toast notifications
+
 ## Data Flow
 
 ### Patient Registration Flow
@@ -100,6 +106,10 @@ The application follows a monorepo pattern with clear separation:
 - **React Hook Form**: Form state management
 - **Zod**: Schema validation
 - **date-fns**: Date manipulation utilities
+
+### PDF Generation
+- **jsPDF**: Client-side PDF generation library
+- **html2canvas**: HTML to canvas conversion for advanced PDF features
 
 ## Deployment Strategy
 

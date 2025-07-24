@@ -5,12 +5,15 @@ import { Label } from "@/components/ui/label"
 const Form = React.forwardRef<
   HTMLFormElement,
   React.FormHTMLAttributes<HTMLFormElement>
->(({ className, ...props }, ref) => (
+>(({ className, onSubmit, children, ...props }, ref) => (
   <form
     ref={ref}
     className={cn("space-y-6", className)}
+    onSubmit={onSubmit}
     {...props}
-  />
+  >
+    {children}
+  </form>
 ))
 Form.displayName = "Form"
 

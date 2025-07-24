@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Heart, User, Activity } from "lucide-react";
-import TestInputForm from "@/components/test-input-form";
-import ReportDisplay from "@/components/report-display";
+import TestInputForm from "../components/test-input-form";
+import ReportDisplay from "../components/report-display";
 
 export default function Dashboard() {
   const [generatedReport, setGeneratedReport] = useState(null);

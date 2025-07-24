@@ -7,7 +7,7 @@ import { Brain, FlaskConical, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Form, FormField, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import { FormField, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -120,127 +120,125 @@ export default function TestInputForm({ onReportGenerated, onGenerationStart, on
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {/* Patient Information */}
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          {/* Patient Information */}
+          <div>
+            <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
+              <User className="w-4 h-4 mr-2" />
+              Patient Information
+            </h3>
+            <div className="space-y-4">
+              <FormField>
+                <FormLabel>Patient ID</FormLabel>
+                <FormControl>
+                  <Input
+                    {...form.register("patientId")}
+                    placeholder="Enter patient ID"
+                    className="focus:ring-[var(--medical-blue)] focus:border-[var(--medical-blue)]"
+                  />
+                </FormControl>
+                <FormMessage>{form.formState.errors.patientId?.message}</FormMessage>
+              </FormField>
+
+              <FormField>
+                <FormLabel>Patient Name</FormLabel>
+                <FormControl>
+                  <Input
+                    {...form.register("patientName")}
+                    placeholder="Enter patient name"
+                    className="focus:ring-[var(--medical-blue)] focus:border-[var(--medical-blue)]"
+                  />
+                </FormControl>
+                <FormMessage>{form.formState.errors.patientName?.message}</FormMessage>
+              </FormField>
+
+              <div className="grid grid-cols-2 gap-3">
+                <FormField>
+                  <FormLabel>Age</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      {...form.register("age", { valueAsNumber: true })}
+                      placeholder="Age"
+                      className="focus:ring-[var(--medical-blue)] focus:border-[var(--medical-blue)]"
+                    />
+                  </FormControl>
+                  <FormMessage>{form.formState.errors.age?.message}</FormMessage>
+                </FormField>
+
+                <FormField>
+                  <FormLabel>Gender</FormLabel>
+                  <FormControl>
+                    <Select onValueChange={(value) => form.setValue("gender", value as "male" | "female" | "other")}>
+                      <SelectTrigger className="focus:ring-[var(--medical-blue)] focus:border-[var(--medical-blue)]">
+                        <SelectValue placeholder="Select gender" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="male">Male</SelectItem>
+                        <SelectItem value="female">Female</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                  <FormMessage>{form.formState.errors.gender?.message}</FormMessage>
+                </FormField>
+              </div>
+            </div>
+          </div>
+
+          {/* Test Type Selection */}
+          <div>
+            <h3 className="text-sm font-medium text-gray-700 mb-3">Test Type</h3>
+            <Select onValueChange={handleTestTypeChange}>
+              <SelectTrigger className="focus:ring-[var(--medical-blue)] focus:border-[var(--medical-blue)]">
+                <SelectValue placeholder="Select test type" />
+              </SelectTrigger>
+              <SelectContent>
+                {testTypeOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <FormMessage>{form.formState.errors.testType?.message}</FormMessage>
+          </div>
+
+          {/* Dynamic Test Parameters */}
+          {selectedTestType && testConfigs[selectedTestType] && (
             <div>
-              <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
-                <User className="w-4 h-4 mr-2" />
-                Patient Information
-              </h3>
-              <div className="space-y-4">
-                <FormField>
-                  <FormLabel>Patient ID</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...form.register("patientId")}
-                      placeholder="Enter patient ID"
-                      className="focus:ring-[var(--medical-blue)] focus:border-[var(--medical-blue)]"
-                    />
-                  </FormControl>
-                  <FormMessage>{form.formState.errors.patientId?.message}</FormMessage>
-                </FormField>
-
-                <FormField>
-                  <FormLabel>Patient Name</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...form.register("patientName")}
-                      placeholder="Enter patient name"
-                      className="focus:ring-[var(--medical-blue)] focus:border-[var(--medical-blue)]"
-                    />
-                  </FormControl>
-                  <FormMessage>{form.formState.errors.patientName?.message}</FormMessage>
-                </FormField>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <FormField>
-                    <FormLabel>Age</FormLabel>
-                    <FormControl>
+              <h3 className="text-sm font-medium text-gray-700 mb-3">Test Parameters</h3>
+              <div className="space-y-3">
+                {testConfigs[selectedTestType].map((param) => (
+                  <div key={param.name} className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
+                    <span className="text-sm font-medium">{param.name}</span>
+                    <div className="flex items-center space-x-2">
                       <Input
                         type="number"
-                        {...form.register("age", { valueAsNumber: true })}
-                        placeholder="Age"
-                        className="focus:ring-[var(--medical-blue)] focus:border-[var(--medical-blue)]"
+                        step={param.step || 1}
+                        className="w-20 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-[var(--medical-blue)] focus:border-[var(--medical-blue)]"
+                        value={testParameters[param.name] || ""}
+                        onChange={(e) => handleParameterChange(param.name, e.target.value)}
+                        placeholder="0"
                       />
-                    </FormControl>
-                    <FormMessage>{form.formState.errors.age?.message}</FormMessage>
-                  </FormField>
-
-                  <FormField>
-                    <FormLabel>Gender</FormLabel>
-                    <FormControl>
-                      <Select onValueChange={(value) => form.setValue("gender", value as "male" | "female" | "other")}>
-                        <SelectTrigger className="focus:ring-[var(--medical-blue)] focus:border-[var(--medical-blue)]">
-                          <SelectValue placeholder="Select gender" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="male">Male</SelectItem>
-                          <SelectItem value="female">Female</SelectItem>
-                          <SelectItem value="other">Other</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </FormControl>
-                    <FormMessage>{form.formState.errors.gender?.message}</FormMessage>
-                  </FormField>
-                </div>
-              </div>
-            </div>
-
-            {/* Test Type Selection */}
-            <div>
-              <h3 className="text-sm font-medium text-gray-700 mb-3">Test Type</h3>
-              <Select onValueChange={handleTestTypeChange}>
-                <SelectTrigger className="focus:ring-[var(--medical-blue)] focus:border-[var(--medical-blue)]">
-                  <SelectValue placeholder="Select test type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {testTypeOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage>{form.formState.errors.testType?.message}</FormMessage>
-            </div>
-
-            {/* Dynamic Test Parameters */}
-            {selectedTestType && testConfigs[selectedTestType] && (
-              <div>
-                <h3 className="text-sm font-medium text-gray-700 mb-3">Test Parameters</h3>
-                <div className="space-y-3">
-                  {testConfigs[selectedTestType].map((param) => (
-                    <div key={param.name} className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
-                      <span className="text-sm font-medium">{param.name}</span>
-                      <div className="flex items-center space-x-2">
-                        <Input
-                          type="number"
-                          step={param.step || 1}
-                          className="w-20 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-[var(--medical-blue)] focus:border-[var(--medical-blue)]"
-                          value={testParameters[param.name] || ""}
-                          onChange={(e) => handleParameterChange(param.name, e.target.value)}
-                          placeholder="0"
-                        />
-                        <span className="text-xs text-gray-500">{param.unit}</span>
-                      </div>
+                      <span className="text-xs text-gray-500">{param.unit}</span>
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ))}
               </div>
-            )}
+            </div>
+          )}
 
-            {/* Generate Report Button */}
-            <Button
-              type="submit"
-              className="w-full bg-[var(--medical-blue)] text-white py-3 px-4 rounded-md hover:bg-[var(--medical-deep)] transition-colors font-medium"
-              disabled={generateReportMutation.isPending}
-            >
-              <Brain className="mr-2 h-4 w-4" />
-              {generateReportMutation.isPending ? "Generating..." : "Generate AI Report"}
-            </Button>
-          </form>
-        </Form>
+          {/* Generate Report Button */}
+          <Button
+            type="submit"
+            className="w-full bg-[var(--medical-blue)] text-white py-3 px-4 rounded-md hover:bg-[var(--medical-deep)] transition-colors font-medium"
+            disabled={generateReportMutation.isPending}
+          >
+            <Brain className="mr-2 h-4 w-4" />
+            {generateReportMutation.isPending ? "Generating..." : "Generate AI Report"}
+          </Button>
+        </form>
       </CardContent>
     </Card>
   );

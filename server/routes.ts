@@ -39,7 +39,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(updatedResult);
     } catch (error) {
       console.error("Error generating report:", error);
-      res.status(500).json({ message: "Failed to generate AI report", error: error.message });
+      res.status(500).json({ message: "Failed to generate AI report", error: error instanceof Error ? error.message : "Unknown error" });
     }
   });
 

@@ -41,7 +41,8 @@ export class MemStorage implements IStorage {
     const testResult: TestResult = { 
       ...insertTestResult, 
       id,
-      createdAt: new Date()
+      createdAt: new Date(),
+      aiReport: null
     };
     this.testResults.set(id, testResult);
     return testResult;

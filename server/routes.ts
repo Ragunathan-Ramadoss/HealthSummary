@@ -156,6 +156,19 @@ Please provide a detailed analysis in the following JSON structure:
     "Clinical recommendation 1",
     "Clinical recommendation 2"
   ],
+  "treatmentOptions": {
+    "lifestyle": [
+      "Lifestyle modification 1",
+      "Lifestyle modification 2"
+    ],
+    "medical": [
+      "Medical intervention 1", 
+      "Medical intervention 2"
+    ],
+    "medications": [
+      "Common medication class/type if applicable"
+    ]
+  },
   "overallAssessment": "Overall clinical assessment",
   "followUpRequired": true/false,
   "criticalFlags": ["any critical issues if present"]
